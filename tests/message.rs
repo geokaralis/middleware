@@ -44,7 +44,7 @@ async fn handle_client(
                 if message == "hello" {
                     socket.write_all("world".as_bytes()).await?;
                 } else {
-                    error!("Received unexpected message: {}", message);
+                    error!("received unexpected message: {}", message);
                 }
             },
             _ = shutdown_rx.recv() => {

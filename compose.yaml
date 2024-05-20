@@ -1,0 +1,15 @@
+services:
+  nats:
+    image: nats:latest
+    ports:
+      - 4222:4222
+      - 8222:8222
+  middleware:
+    build: .
+    environment:
+      NATS_URL: nats://nats:4222
+      PORT: 8080
+    ports:
+      - 8080:8080
+    depends_on:
+      - nats

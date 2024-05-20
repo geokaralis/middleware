@@ -34,7 +34,7 @@ async fn handle_client(
                       socket.write_all(pos_message.payload.as_ref()).await?;
                   }
                 } else {
-                    error!("Received unexpected message: {}", message);
+                    error!("received unexpected message: {}", message);
                 }
             },
             _ = shutdown_rx.recv() => {
