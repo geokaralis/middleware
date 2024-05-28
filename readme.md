@@ -12,7 +12,7 @@ A service for handling communication between ECR machines and POS devices.
 To run the application in development mode, use the following command:
 
 ```
-cargo run
+RUST_LOG=debug cargo run
 ```
 
 ## Docker

@@ -1,6 +1,17 @@
+mod connection;
+pub use connection::Connection;
+
+mod shutdown;
+use shutdown::Shutdown;
+
+mod handler;
+use handler::Handler;
+
 mod server;
 
-use std::env;
+mod config;
+use config::Config;
+
 use tokio::net::TcpListener;
 use tokio::signal;
 use tracing::info;
@@ -9,9 +20,10 @@ use tracing::info;
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     set_up_logging()?;
 
-    let port = env::var("PORT").unwrap_or_else(|_| "8080".into());
+    let config = Config::parse_config();
+    let addr = format!("{}:{}", config.app.host, config.app.port);
 
-    let listener = TcpListener::bind(&format!("0.0.0.0:{}", port)).await?;
+    let listener = TcpListener::bind(&addr).await?;
     info!("listening on {}", listener.local_addr().unwrap());
 
     server::run(listener, signal::ctrl_c()).await;

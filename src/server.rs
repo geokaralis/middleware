@@ -1,7 +1,7 @@
+use crate::{Connection, Handler, Shutdown};
+
 use futures::Future;
-use std::str;
 use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt},
     net::{TcpListener, TcpStream},
     sync::{broadcast, mpsc},
 };
@@ -52,20 +52,32 @@ impl Listener {
         info!("accepting inbound connections");
 
         loop {
-            let mut socket = self.accept().await?;
+            let socket = self.accept().await?;
+
+            let mut handler = Handler {
+                connection: Connection::new(socket),
+                shutdown: Shutdown::new(self.notify_shutdown.subscribe()),
+                _shutdown_complete: self.shutdown_complete_tx.clone(),
+            };
 
             tokio::spawn(async move {
-                let mut buf = [0; 4 * 1024];
-
-                let n = socket.read(&mut buf).await.unwrap();
-
-                socket.write_all(&buf[0..n]).await.unwrap();
-
-                let data = str::from_utf8(&buf[0..n]).unwrap();
-                info!(data);
-
-                socket.shutdown().await.unwrap();
+                if let Err(err) = handler.run().await {
+                    error!(cause = ?err, "connection error");
+                }
             });
+
+            // tokio::spawn(async move {
+            //     let mut buf = [0; 4 * 1024];
+
+            //     let n = socket.read(&mut buf).await.unwrap();
+
+            //     socket.write_all(&buf[0..n]).await.unwrap();
+
+            //     let data = str::from_utf8(&buf[0..n]).unwrap();
+            //     info!(data);
+
+            //     socket.shutdown().await.unwrap();
+            // });
         }
     }
 

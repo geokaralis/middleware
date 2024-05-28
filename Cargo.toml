@@ -9,6 +9,8 @@ tokio = { version = "1", features = ["full"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
 futures = { version = "0.3.28", default-features = false, features = ["std", "async-await"] }
+bytes = "1.6.0"
+clap = { version = "4.5.4", features = ["derive", "env"] }
 
 [dev-dependencies]
 testcontainers = "0.16.7"
