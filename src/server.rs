@@ -1,4 +1,6 @@
-use crate::{Connection, Handler, Shutdown};
+use std::sync::Arc;
+
+use crate::{Config, Connection, Handler, Nats, Shutdown};
 
 use futures::Future;
 use tokio::{
@@ -9,16 +11,20 @@ use tracing::{error, info};
 
 #[derive(Debug)]
 struct Listener {
+    config: Arc<Config>,
+    nats: Arc<Nats>,
     listener: TcpListener,
     notify_shutdown: broadcast::Sender<()>,
     shutdown_complete_tx: mpsc::Sender<()>,
 }
 
-pub async fn run(listener: TcpListener, shutdown: impl Future) {
+pub async fn run(nats: Nats, listener: TcpListener, shutdown: impl Future, config: Config) {
     let (notify_shutdown, _) = broadcast::channel(1);
     let (shutdown_complete_tx, mut shutdown_complete_rx) = mpsc::channel(1);
 
     let mut server = Listener {
+        config: Arc::new(config),
+        nats: Arc::new(nats),
         listener,
         notify_shutdown,
         shutdown_complete_tx,
@@ -55,6 +61,8 @@ impl Listener {
             let socket = self.accept().await?;
 
             let mut handler = Handler {
+                config: self.config.clone(),
+                nats: self.nats.clone(),
                 connection: Connection::new(socket),
                 shutdown: Shutdown::new(self.notify_shutdown.subscribe()),
                 _shutdown_complete: self.shutdown_complete_tx.clone(),
@@ -65,19 +73,6 @@ impl Listener {
                     error!(cause = ?err, "connection error");
                 }
             });
-
-            // tokio::spawn(async move {
-            //     let mut buf = [0; 4 * 1024];
-
-            //     let n = socket.read(&mut buf).await.unwrap();
-
-            //     socket.write_all(&buf[0..n]).await.unwrap();
-
-            //     let data = str::from_utf8(&buf[0..n]).unwrap();
-            //     info!(data);
-
-            //     socket.shutdown().await.unwrap();
-            // });
         }
     }
 

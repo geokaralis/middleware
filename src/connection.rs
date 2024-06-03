@@ -1,6 +1,6 @@
 use bytes::BytesMut;
 use tokio::{
-    io::{AsyncReadExt, BufWriter},
+    io::{AsyncReadExt, AsyncWriteExt, BufWriter},
     net::TcpStream,
 };
 
@@ -44,5 +44,14 @@ impl Connection {
         } else {
             Ok(None)
         }
+    }
+
+    pub async fn write_data(
+        &mut self,
+        data: &[u8],
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        self.stream.write_all(data).await?;
+        self.stream.flush().await?;
+        Ok(())
     }
 }

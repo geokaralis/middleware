@@ -1,16 +1,4 @@
-mod connection;
-pub use connection::Connection;
-
-mod shutdown;
-use shutdown::Shutdown;
-
-mod handler;
-use handler::Handler;
-
-mod server;
-
-mod config;
-use config::Config;
+use middleware::{server, Config, Nats};
 
 use tokio::net::TcpListener;
 use tokio::signal;
@@ -21,12 +9,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     set_up_logging()?;
 
     let config = Config::parse_config();
+
+    let nats = Nats::connect(&config.nats.url).await?;
+
     let addr = format!("{}:{}", config.app.host, config.app.port);
 
     let listener = TcpListener::bind(&addr).await?;
     info!("listening on {}", listener.local_addr().unwrap());
 
-    server::run(listener, signal::ctrl_c()).await;
+    server::run(nats, listener, signal::ctrl_c(), config).await;
 
     Ok(())
 }

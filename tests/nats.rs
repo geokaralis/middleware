@@ -107,3 +107,16 @@ async fn test_tcp_server_with_nats() -> Result<(), Box<dyn std::error::Error + S
 
     Ok(())
 }
+
+// tokio::spawn(async move {
+//     let mut buf = [0; 4 * 1024];
+
+//     let n = socket.read(&mut buf).await.unwrap();
+
+//     socket.write_all(&buf[0..n]).await.unwrap();
+
+//     let data = str::from_utf8(&buf[0..n]).unwrap();
+//     info!(data);
+
+//     socket.shutdown().await.unwrap();
+// });

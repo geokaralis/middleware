@@ -10,10 +10,46 @@ pub struct AppConfig {
 }
 
 #[derive(Parser, Debug)]
+pub struct NatsConfig {
+    #[arg(
+        name = "nats_url",
+        long,
+        env("NATS_URL"),
+        default_value = "nats://127.0.0.1:4222"
+    )]
+    pub url: String,
+
+    #[command(flatten)]
+    pub topic: Topic,
+}
+
+#[derive(Parser, Debug)]
+pub struct Topic {
+    #[arg(
+        name = "topic_transaction",
+        long,
+        env("NATS_TRANSACTION_TOPIC"),
+        default_value = "transaction"
+    )]
+    pub transaction: String,
+
+    #[arg(
+        name = "topic_result",
+        long,
+        env("NATS_RESULT_TOPIC"),
+        default_value = "transaction.result"
+    )]
+    pub result: String,
+}
+
+#[derive(Parser, Debug)]
 #[command(author, version, about)]
 pub struct Config {
     #[command(flatten)]
     pub app: AppConfig,
+
+    #[command(flatten)]
+    pub nats: NatsConfig,
 }
 
 impl Config {
