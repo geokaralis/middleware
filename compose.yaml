@@ -4,6 +4,10 @@ services:
     ports:
       - 4222:4222
       - 8222:8222
+    volumes:
+      - ./nats/nats.conf:/etc/nats/nats.conf
+      # - ./nats:/data/jetstream
+    command: ["-c", "/etc/nats/nats.conf"]
   middleware:
     build: .
     environment:

@@ -6,7 +6,7 @@ use std::error::Error;
 
 #[derive(Debug)]
 pub struct Nats {
-    client: NatsClient,
+    pub client: NatsClient,
 }
 
 impl Nats {

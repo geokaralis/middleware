@@ -1,4 +1,5 @@
-use middleware::{server, Config, Nats};
+use async_nats::jetstream;
+use middleware::{server, Config};
 
 use tokio::net::TcpListener;
 use tokio::signal;
@@ -10,14 +11,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     let config = Config::parse_config();
 
-    let nats = Nats::connect(&config.nats.url).await?;
+    let nats = async_nats::connect(&config.nats.url).await?;
+    let jetstream = jetstream::new(nats);
 
     let addr = format!("{}:{}", config.app.host, config.app.port);
 
     let listener = TcpListener::bind(&addr).await?;
     info!("listening on {}", listener.local_addr().unwrap());
 
-    server::run(nats, listener, signal::ctrl_c(), config).await;
+    server::run(jetstream, listener, signal::ctrl_c()).await;
 
     Ok(())
 }

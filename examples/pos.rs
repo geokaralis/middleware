@@ -1,5 +1,4 @@
-use middleware::Config;
-
+use async_nats::jetstream::{self, stream};
 use futures::StreamExt;
 
 /// RUST_LOG=debug cargo run
@@ -10,16 +9,41 @@ use futures::StreamExt;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let config = Config::parse_config();
     let nats = async_nats::connect("nats://127.0.0.1:4222").await?;
 
-    let mut subscription = nats.subscribe(config.nats.topic.transaction).await?;
+    let jetstream = jetstream::new(nats);
 
-    if let Some(message) = subscription.next().await {
-        println!("Received message {message:?}");
+    let stream = jetstream
+        .create_stream(jetstream::stream::Config {
+            name: "EVENTS".to_string(),
+            retention: stream::RetentionPolicy::WorkQueue,
+            subjects: vec!["events.>".to_string()],
+            ..Default::default()
+        })
+        .await?;
 
-        nats.publish(config.nats.topic.result, "world".into())
+    let consumer = stream
+        .create_consumer(jetstream::consumer::pull::Config {
+            durable_name: Some("pos-processor".to_string()),
+            filter_subject: "events.ecr.>".to_string(),
+            ..Default::default()
+        })
+        .await?;
+
+    let mut messages = consumer.messages().await?;
+
+    while let Some(message) = messages.next().await {
+        let message = message?;
+        println!("Received message {:?}", message);
+
+        jetstream
+            .publish(
+                "events.pos.transaction",
+                "ACQ103TID88824756\0\x0ePOS0110X/hellopos".into(),
+            )
+            .await?
             .await?;
+        message.ack().await?;
     }
 
     Ok(())

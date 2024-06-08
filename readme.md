@@ -2,6 +2,34 @@
 
 A service for handling communication between ECR machines and POS devices.
 
+## Architecture
+
+```mermaid
+graph TD
+    subgraph K8s Cluster
+        NATS <-->|JetStream| Middleware[ECR Middleware]
+    end
+        ECR[ECR] <-->|TCP| Middleware
+        POS[POS] <--> |JetStream| NATS
+```
+
+## Flow
+
+```mermaid
+sequenceDiagram
+    participant ECR
+    participant Middleware as ECR Middleware
+    participant NATS
+    participant POS
+
+    ECR->>Middleware: Send message via TCP
+    Middleware->>NATS: Forward message via jetstream
+    NATS->>POS: Forward message via jetstream
+    POS-->>NATS: Send response via jetstream
+    NATS-->>Middleware: Forward response via jetstream
+    Middleware-->>ECR: Send response via TCP
+```
+
 ## Prerequisites
 
 1. Install [`rust`]
