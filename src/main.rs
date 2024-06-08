@@ -1,5 +1,5 @@
 use async_nats::jetstream;
-use middleware::{server, Config};
+use ecr_middleware::{server, Config};
 
 use tokio::net::TcpListener;
 use tokio::signal;

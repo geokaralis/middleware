@@ -2,17 +2,6 @@
 
 A service for handling communication between ECR machines and POS devices.
 
-## Architecture
-
-```mermaid
-graph TD
-    subgraph K8s Cluster
-        NATS <-->|JetStream| Middleware[ECR Middleware]
-    end
-        ECR[ECR] <-->|TCP| Middleware
-        POS[POS] <--> |JetStream| NATS
-```
-
 ## Flow
 
 ```mermaid
@@ -57,6 +46,20 @@ To stop and remove the containers, use the command:
 docker compose down
 ```
 
+## Working with the examples
+
+To run an example pos client for receiving messages, use the command:
+
+```
+cargo run --example pos
+```
+
+Similarly, to run an example ecr client for sending messages, use the command:
+
+```
+cargo run --example ecr
+```
+
 ## Running tests
 
 Some tests rely on [`testcontainers`] make sure docker is running.
@@ -73,6 +76,17 @@ To run a specific test (e.g., a test named multiple), use the command:
 
 ```
 cargo test --test multiple
+```
+
+## Architecture
+
+```mermaid
+graph TD
+    subgraph K8s Cluster
+        NATS <--> Middleware[ECR Middleware]
+    end
+        ECR[ECR] <--> Middleware
+        POS[POS] <--> NATS
 ```
 
 [`rust`]: https://www.rust-lang.org/tools/install

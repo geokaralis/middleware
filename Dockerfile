@@ -4,5 +4,5 @@ COPY . /app
 RUN cargo build --release
 
 FROM gcr.io/distroless/cc-debian12
-COPY --from=builder /app/target/release/middleware /
-CMD ["./middleware"]
+COPY --from=builder /app/target/release/ecr-middleware /
+CMD ["./ecr-middleware"]
