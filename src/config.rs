@@ -19,27 +19,65 @@ pub struct NatsConfig {
     )]
     pub url: String,
 
+    #[arg(
+        name = "nats_stream",
+        long,
+        env("NATS_STREAM"),
+        default_value = "EVENTS"
+    )]
+    pub stream: String,
+
+    #[arg(
+        name = "nats_subjects",
+        long,
+        env("NATS_SUBJECTS"),
+        default_value = "events.>"
+    )]
+    pub subjects: String,
+
     #[command(flatten)]
     pub topic: Topic,
+
+    #[command(flatten)]
+    pub consumer: Consumer,
+}
+
+#[derive(Parser, Debug)]
+pub struct Consumer {
+    #[arg(
+        name = "consumer_durable_name",
+        long,
+        env("NATS_CONSUMER_DURABLE_NAME"),
+        default_value = "middleware-processor"
+    )]
+    pub durable_name: String,
+
+    #[arg(
+        name = "consumer_filter_subject",
+        long,
+        env("NATS_CONSUMER_FILTER_SUBJECT"),
+        default_value = "events.pos.>"
+    )]
+    pub filter_subject: String,
 }
 
 #[derive(Parser, Debug)]
 pub struct Topic {
     #[arg(
-        name = "topic_transaction",
+        name = "topic_ecr",
         long,
-        env("NATS_TRANSACTION_TOPIC"),
-        default_value = "transaction"
+        env("NATS_ECR_TOPIC"),
+        default_value = "events.ecr"
     )]
-    pub transaction: String,
+    pub ecr: String,
 
     #[arg(
-        name = "topic_result",
+        name = "topic_pos",
         long,
-        env("NATS_RESULT_TOPIC"),
-        default_value = "transaction.result"
+        env("NATS_POS_TOPIC"),
+        default_value = "events.pos"
     )]
-    pub result: String,
+    pub pos: String,
 }
 
 #[derive(Parser, Debug)]

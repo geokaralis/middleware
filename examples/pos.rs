@@ -1,5 +1,6 @@
 use async_nats::jetstream::{self, stream};
 use futures::StreamExt;
+use tracing::info;
 
 /// RUST_LOG=debug cargo run
 ///
@@ -9,6 +10,8 @@ use futures::StreamExt;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    tracing_subscriber::fmt::try_init()?;
+
     let nats = async_nats::connect("nats://127.0.0.1:4222").await?;
 
     let jetstream = jetstream::new(nats);
@@ -25,7 +28,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let consumer = stream
         .create_consumer(jetstream::consumer::pull::Config {
             durable_name: Some("pos-processor".to_string()),
-            filter_subject: "events.ecr.>".to_string(),
+            filter_subject: "events.ecr.88824756".to_string(),
             ..Default::default()
         })
         .await?;
@@ -34,11 +37,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     while let Some(message) = messages.next().await {
         let message = message?;
-        println!("Received message {:?}", message);
+        info!("received message {:?}", message);
 
         jetstream
             .publish(
-                "events.pos.transaction",
+                "events.pos.88824756",
                 "ACQ103TID88824756\0\x0ePOS0110X/hellopos".into(),
             )
             .await?

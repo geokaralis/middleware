@@ -19,7 +19,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let listener = TcpListener::bind(&addr).await?;
     info!("listening on {}", listener.local_addr().unwrap());
 
-    server::run(jetstream, listener, signal::ctrl_c()).await;
+    server::run(jetstream, listener, signal::ctrl_c(), config).await;
 
     Ok(())
 }

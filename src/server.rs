@@ -1,4 +1,4 @@
-use crate::{Connection, Handler, Shutdown};
+use crate::{Config, Connection, Handler, Shutdown};
 
 use async_nats::jetstream::{
     self,
@@ -8,18 +8,18 @@ use async_nats::jetstream::{
     Context as JetStreamContext,
 };
 use futures::Future;
+use std::sync::Arc;
 use tokio::{
     net::{TcpListener, TcpStream},
     sync::{broadcast, mpsc},
 };
-use tracing::{debug, error, info};
+use tracing::{error, info};
 
 #[derive(Debug)]
 struct Listener {
-    // config: Arc<Config>,
+    config: Arc<Config>,
     jetstream: JetStreamContext,
     consumer: Consumer<ConsumerConfig>,
-    // nats: Arc<Nats>,
     listener: TcpListener,
     notify_shutdown: broadcast::Sender<()>,
     shutdown_complete_tx: mpsc::Sender<()>,
@@ -29,37 +29,34 @@ pub async fn run(
     jetstream: JetStreamContext,
     listener: TcpListener,
     shutdown: impl Future,
-    // config: Config,
+    config: Config,
 ) {
     let (notify_shutdown, _) = broadcast::channel(1);
     let (shutdown_complete_tx, mut shutdown_complete_rx) = mpsc::channel(1);
 
     let stream = jetstream
         .create_stream(jetstream::stream::Config {
-            name: "EVENTS".to_string(),
+            name: config.nats.stream.clone(),
             retention: stream::RetentionPolicy::WorkQueue,
-            subjects: vec!["events.>".to_string()],
+            subjects: vec![config.nats.subjects.clone()],
             ..Default::default()
         })
         .await
         .unwrap();
-    debug!("Created the stream: {:?}", stream);
 
     let consumer = stream
         .create_consumer(jetstream::consumer::pull::Config {
-            durable_name: Some("middleware-processor".to_string()),
-            filter_subject: "events.pos.>".to_string(),
+            durable_name: Some(config.nats.consumer.durable_name.clone()),
+            filter_subject: config.nats.consumer.filter_subject.clone(),
             ..Default::default()
         })
         .await
         .unwrap();
-    debug!("Created the consumer: {:?}", consumer);
 
     let mut server = Listener {
-        // config: Arc::new(config),
+        config: Arc::new(config),
         jetstream,
         consumer,
-        // nats: Arc::new(nats),
         listener,
         notify_shutdown,
         shutdown_complete_tx,
@@ -96,10 +93,9 @@ impl Listener {
             let socket = self.accept().await?;
 
             let mut handler = Handler {
-                // config: self.config.clone(),
+                config: self.config.clone(),
                 jetstream: self.jetstream.clone(),
                 consumer: self.consumer.clone(),
-                // nats: self.nats.clone(),
                 connection: Connection::new(socket),
                 shutdown: Shutdown::new(self.notify_shutdown.subscribe()),
                 _shutdown_complete: self.shutdown_complete_tx.clone(),

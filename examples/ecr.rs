@@ -6,7 +6,7 @@ use tokio::{
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mut client = TcpStream::connect("127.0.0.1:8080").await?;
-    let message = "hello";
+    let message = "ACQ103TID88824756\0\nECR0110X/0";
 
     client.write_all(message.as_bytes()).await?;
 

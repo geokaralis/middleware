@@ -1,17 +1,17 @@
-use crate::{Connection, Shutdown};
+use crate::{utils::extract_tid, Config, Connection, Shutdown};
 
 use async_nats::jetstream::{
     consumer::{pull::Config as ConsumerConfig, Consumer},
     Context as JetStreamContext,
 };
 use futures::StreamExt;
+use std::sync::Arc;
 use tokio::sync::mpsc;
 use tracing::debug;
 
 #[derive(Debug)]
 pub(crate) struct Handler {
-    // pub(crate) config: Arc<Config>,
-    // pub(crate) nats: Arc<Nats>,
+    pub(crate) config: Arc<Config>,
     pub(crate) jetstream: JetStreamContext,
     pub(crate) consumer: Consumer<ConsumerConfig>,
     pub(crate) connection: Connection,
@@ -36,8 +36,16 @@ impl Handler {
 
             debug!("{:?}", data);
 
+            let tid = match extract_tid(&data) {
+                Some(data) => data,
+                None => return Ok(()),
+            };
+
             self.jetstream
-                .publish("events.ecr.transaction", data.into())
+                .publish(
+                    format!("{}.{}", self.config.nats.topic.ecr, tid),
+                    data.clone().into(),
+                )
                 .await?
                 .await?;
 
@@ -46,8 +54,8 @@ impl Handler {
             tokio::select! {
                 Some(message) = messages.next() => {
                     let message = message?;
-                    if message.subject == "events.pos.transaction".into() {
-                        debug!("Received message {:?}", message);
+                    if message.subject == format!("{}.{}", self.config.nats.topic.pos, tid).into() {
+                        debug!("received message {:?}", message);
                         self.connection.write_data(&message.payload).await?;
                         message.ack().await?;
                     }
