@@ -1,5 +1,6 @@
 use async_nats::jetstream::{self, stream};
 use futures::StreamExt;
+use std::time::Duration;
 use tracing::info;
 
 /// RUST_LOG=debug cargo run
@@ -21,6 +22,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             name: "EVENTS".to_string(),
             retention: stream::RetentionPolicy::WorkQueue,
             subjects: vec!["events.>".to_string()],
+            max_age: Duration::from_secs(60),
             ..Default::default()
         })
         .await?;

@@ -8,7 +8,7 @@ use async_nats::jetstream::{
     Context as JetStreamContext,
 };
 use futures::Future;
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 use tokio::{
     net::{TcpListener, TcpStream},
     sync::{broadcast, mpsc},
@@ -39,6 +39,7 @@ pub async fn run(
             name: config.nats.stream.clone(),
             retention: stream::RetentionPolicy::WorkQueue,
             subjects: vec![config.nats.subjects.clone()],
+            max_age: Duration::from_secs(60),
             ..Default::default()
         })
         .await
